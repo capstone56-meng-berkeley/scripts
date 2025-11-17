@@ -1,0 +1,68 @@
+{
+  "_comment": "Example configuration for SEM microstructure image augmentation",
+  "_description": "Optimized for materials science applications with grayscale SEM images",
+  "_modes": "Use either Google Drive mode OR local mode, not both",
+
+  "google_drive_mode": {
+    "input_folder_id": "YOUR_INPUT_FOLDER_ID_HERE",
+    "output_folder_id": "YOUR_OUTPUT_FOLDER_ID_HERE",
+    "credentials_path": "credentials.json",
+    "token_path": "token.json"
+  },
+
+  "local_mode": {
+    "_comment": "Alternative to Google Drive mode - process files from local filesystem",
+    "local_input_path": "./input_sem_images",
+    "local_output_path": "./output_augmented_sem"
+  },
+
+  "google_sheets_integration": {
+    "_comment": "Optional: Track processing results in Google Sheets",
+    "sheet_id": "YOUR_GOOGLE_SHEET_ID_HERE",
+    "sheet_worksheet": "microstructure_database",
+    "sheet_id_column": "C",
+    "sheet_result_column": "F"
+  },
+
+  "processing_settings": {
+    "max_files_to_process": null,
+    "_max_files_comment": "Set to null or 0 to process all files, or specify a number to limit",
+    "temp_dir": "./temp_augmentation"
+  },
+
+  "disabled_operations": [],
+  "_disabled_operations_comment": "List operation names to exclude from augmentation. Example: [\"elastic\", \"dropout\", \"compression\"]",
+
+  "_usage_examples": {
+    "basic": "./run_augmenter.sh --n-samples 3",
+    "limited_files": "./run_augmenter.sh --n-samples 5",
+    "with_config": "python process_files.py --operation augment --n-samples 3 --config config.sem.json"
+  },
+
+  "_available_operations": {
+    "description": "All 14 available augmentation operations (can be disabled via disabled_operations)",
+    "all_operations": [
+      "clahe - Adaptive histogram equalization for contrast enhancement",
+      "brightness_contrast - Random brightness and contrast adjustments",
+      "gamma - Non-linear brightness variations",
+      "iso_noise - Realistic SEM detector noise",
+      "rotate90 - 90-degree rotations",
+      "hflip - Horizontal flips",
+      "vflip - Vertical flips",
+      "geom_combined - Combined geometric transforms (flip + rotate)",
+      "intensity_blur - Combined intensity adjustments and blur",
+      "shift_scale - Small spatial shifts and scaling",
+      "elastic - Mild elastic deformation",
+      "compression - JPEG compression artifacts",
+      "downscale - Resolution reduction (different magnifications)",
+      "dropout - Random occlusions/missing regions"
+    ]
+  },
+
+  "_recommended_settings": {
+    "n_samples_per_operation": "2-5 (results in 28-70 augmented images per input with all 14 operations)",
+    "seed": "42 (for reproducibility)",
+    "max_files_to_process": "Start with small batches (3-5) to test, then scale up",
+    "disable_optional": "To use only core operations, set disabled_operations to: [\"elastic\", \"compression\", \"downscale\", \"dropout\"]"
+  }
+}

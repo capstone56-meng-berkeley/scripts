@@ -24,7 +24,8 @@ from lib.file_processor import FileProcessor
 from lib.augmentation_ops import ImageAugmentationOp, build_default_augmentation_ops
 
 
-def run_augmentation(config: ProcessingConfig, n_samples: int = 2, seed: int = 42):
+def run_augmentation(config: ProcessingConfig, n_samples: int = 2, seed: int = 42,
+                    disabled_ops: list = None):
     """
     Run image augmentation operation.
 
@@ -32,11 +33,23 @@ def run_augmentation(config: ProcessingConfig, n_samples: int = 2, seed: int = 4
         config: ProcessingConfig instance
         n_samples: Number of samples per augmentation operation
         seed: Random seed
+        disabled_ops: List of operation names to disable
     """
     print("=== Image Augmentation Mode ===")
+    print("Building augmentation operations (SEM microstructure optimized)")
 
-    # Build augmentation operations
-    aug_ops = build_default_augmentation_ops(seed=seed)
+    # Build all augmentation operations
+    all_ops = build_default_augmentation_ops(seed=seed)
+
+    # Filter out disabled operations
+    if disabled_ops:
+        disabled_set = set(disabled_ops)
+        aug_ops = [op for op in all_ops if op.name not in disabled_set]
+        print(f"Disabled operations: {', '.join(disabled_ops)}")
+        print(f"Active operations: {len(aug_ops)}/{len(all_ops)}")
+    else:
+        aug_ops = all_ops
+        print(f"Using all {len(aug_ops)} operations")
 
     # Create augmentation file operation
     operation = ImageAugmentationOp(
@@ -137,6 +150,9 @@ def main():
         print("Please create config.json or set environment variables")
         sys.exit(1)
 
+    # Get disabled operations from config
+    disabled_ops = loaded_config.get('disabled_operations', [])
+
     config = ProcessingConfig(
         input_folder_id=loaded_config.get('input_folder_id'),
         output_folder_id=loaded_config.get('output_folder_id'),
@@ -154,7 +170,8 @@ def main():
 
     # Run operation
     if args.operation == 'augment':
-        run_augmentation(config, n_samples=args.n_samples, seed=args.seed)
+        run_augmentation(config, n_samples=args.n_samples, seed=args.seed,
+                        disabled_ops=disabled_ops)
     elif args.operation == 'custom':
         run_custom_operation(config, args.module)
 
