@@ -280,8 +280,4 @@ elastic_deform = A.Compose([
 ```
 
 ## References
-
-- Full transform catalog: [albumentations_transforms_catalog.md](albumentations_transforms_catalog.md)
-- SEM-specific guide: [SEM_AUGMENTATION_GUIDE.md](SEM_AUGMENTATION_GUIDE.md)
-- Architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
 - General README: [README_MODULAR.md](README_MODULAR.md)
