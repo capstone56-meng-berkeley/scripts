@@ -1,0 +1,38 @@
+name: Scheduled Image Augmentation
+
+on:
+  # Run every day at 2:00 AM UTC
+  # Adjust the cron expression as needed:
+  # Format: minute hour day-of-month month day-of-week
+  # Examples:
+  #   '0 2 * * *'     - Daily at 2:00 AM UTC
+  #   '0 */6 * * *'   - Every 6 hours
+  #   '0 0 * * 0'     - Weekly on Sunday at midnight UTC
+  #   '0 0 1 * *'     - Monthly on the 1st at midnight UTC
+  schedule:
+    - cron: '0 2 * * *'
+
+  # Allow manual triggering from GitHub UI
+  workflow_dispatch:
+    inputs:
+      n_samples:
+        description: 'Number of samples per operation'
+        required: false
+        type: number
+        default: 3
+      max_files:
+        description: 'Maximum number of files to process (leave empty for all)'
+        required: false
+        type: number
+
+jobs:
+  call-augmentation:
+    uses: ./.github/workflows/augmentation.yml
+    with:
+      operation: 'augment'
+      n_samples: ${{ inputs.n_samples || 3 }}
+      max_files: ${{ inputs.max_files || 0 }}
+    secrets:
+      GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      GOOGLE_TOKEN: ${{ secrets.GOOGLE_TOKEN }}
+      CONFIG_JSON: ${{ secrets.CONFIG_JSON }}

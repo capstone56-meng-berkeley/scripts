@@ -1,0 +1,82 @@
+name: Image Augmentation
+
+on:
+  workflow_dispatch:
+    inputs:
+      n_samples:
+        description: 'Number of samples per operation'
+        required: true
+        type: number
+        default: 3
+      max_files:
+        description: 'Maximum number of files to process (leave empty for all)'
+        required: false
+        type: number
+
+jobs:
+  augment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        working-directory: ./scripts
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
+      - name: Run augmentation
+        working-directory: ./scripts
+        env:
+          # Credentials (from secrets)
+          CREDENTIALS_JSON: ${{ secrets.CREDENTIALS_JSON }}
+          TOKEN_JSON: ${{ secrets.TOKEN_JSON }}
+
+          # Google Drive configuration (from secrets)
+          INPUT_FOLDER_ID: ${{ secrets.INPUT_FOLDER_ID }}
+          OUTPUT_FOLDER_ID: ${{ secrets.OUTPUT_FOLDER_ID }}
+
+          # Google Sheets configuration (optional, from secrets)
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          SHEET_WORKSHEET: ${{ secrets.SHEET_WORKSHEET }}
+          SHEET_ID_COLUMN: ${{ secrets.SHEET_ID_COLUMN }}
+          SHEET_RESULT_COLUMN: ${{ secrets.SHEET_RESULT_COLUMN }}
+
+          # Processing settings (from inputs)
+          MAX_FILES_TO_PROCESS: ${{ inputs.max_files }}
+        run: |
+          chmod +x run_augmenter.sh
+          ./run_augmenter.sh --n-samples ${{ inputs.n_samples }}
+
+      - name: Upload logs and state
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: augmentation-results-${{ github.run_number }}
+          path: |
+            scripts/output/warnings_*.log
+            scripts/output/augmentation_state.csv
+            scripts/temp_augmentation/output/warnings_*.log
+            scripts/temp_augmentation/output/augmentation_state.csv
+          retention-days: 30
+          if-no-files-found: ignore
+
+# Required Secrets (set in GitHub repository settings):
+# - CREDENTIALS_JSON: Full contents of Google OAuth credentials.json
+# - TOKEN_JSON: (Optional) Pre-authenticated token for non-interactive auth
+# - INPUT_FOLDER_ID: Google Drive folder ID for input images
+# - OUTPUT_FOLDER_ID: Google Drive folder ID for output
+# - SHEET_ID: (Optional) Google Sheets ID for tracking
+# - SHEET_WORKSHEET: (Optional) Worksheet name (default: "database")
+# - SHEET_ID_COLUMN: (Optional) ID column (default: "C")
+# - SHEET_RESULT_COLUMN: (Optional) Result column (default: "F")

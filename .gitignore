@@ -1,0 +1,30 @@
+# Virtual environment
+.venv/**
+env/
+ENV/
+.claude/**
+
+# Configuration files with secrets
+config.json
+credentials.json
+token.json
+token.json.tmp
+.env
+
+# Temporary files
+temp_augmentation/
+*.pyc
+__pycache__/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+client_secret_*
+token*

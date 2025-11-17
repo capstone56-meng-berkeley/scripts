@@ -1,0 +1,28 @@
+{
+  "_comment": "Configuration file for Flexible File Processing Script",
+  "_modes": "Use either Google Drive mode OR local mode, not both",
+
+  "google_drive_mode": {
+    "input_folder_id": "1VScZDE8q1xdHIq1kY588uT-detAMDfei",
+    "output_folder_id": "1NK1qtldoJAmYqhSoWQi8e1ZPgMDr5dzD",
+    "credentials_path": "credentials.json",
+    "token_path": "token.json"
+  },
+
+  "local_mode": {
+    "local_input_path": "/path/to/your/images",
+    "local_output_path": "/path/to/output/folder"
+  },
+
+  "google_sheets_integration": {
+    "sheet_id": "1Mo0E67dV8eORdZpqwsbJVxVCoFc5kYwKGiXCvSCD-p0",
+    "sheet_worksheet": "database worksheet",
+    "sheet_id_column": "A",
+    "sheet_result_column": "E"
+  },
+
+  "processing_settings": {
+    "max_files_to_process": null,
+    "temp_dir": "./temp_processing"
+  }
+}
