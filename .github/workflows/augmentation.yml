@@ -1,6 +1,17 @@
 name: Image Augmentation
 
 on:
+  workflow_call:
+    inputs:
+      n_samples:
+        description: 'Number of samples per operation'
+        required: true
+        type: number
+        default: 3
+      max_files:
+        description: 'Maximum number of files to process (leave empty for all)'
+        required: false
+        type: number
   workflow_dispatch:
     inputs:
       n_samples:
