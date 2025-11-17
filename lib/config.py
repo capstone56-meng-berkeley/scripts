@@ -53,7 +53,7 @@ def load_config_from_env_or_json(config_file: str = 'config.json') -> dict:
 
     for env_var, config_key in env_mappings.items():
         value = os.getenv(env_var)
-        if value is not None:
+        if value is not None and value != '':
             # Convert to appropriate type
             if config_key == 'max_files_to_process':
                 config[config_key] = int(value) if value.lower() != 'none' else None
