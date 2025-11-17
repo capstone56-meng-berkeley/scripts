@@ -129,49 +129,162 @@ class ImageAugmentationOp(FileOperation):
 
 def build_default_augmentation_ops(seed: int = 42) -> List[AugmentationOperation]:
     """
-    Build default set of augmentation operations.
+    Build comprehensive augmentation operations optimized for SEM microstructure images.
+
+    These augmentations are designed for materials science applications where:
+    - Images are grayscale (SEM)
+    - Microstructures have no inherent orientation (rotation invariant)
+    - Preserving material features (grain boundaries, phases) is critical
+    - Realistic imaging variations (brightness, contrast, noise) are important
+
+    This combines essential SEM-specific operations with general-purpose augmentations
+    for maximum dataset diversity while preserving material features.
 
     Args:
         seed: Random seed for reproducibility
 
     Returns:
-        List of AugmentationOperation instances
+        List of AugmentationOperation instances (14 total operations)
     """
-    # Mild geometric + flip
-    geom_mild = A.Compose([
+    # 1. Contrast enhancement (critical for SEM)
+    contrast_enhancement = A.Compose([
+        A.CLAHE(clip_limit=4.0, tile_grid_size=(8, 8), p=1.0),
+    ])
+
+    # 2. Brightness and contrast variations
+    brightness_contrast = A.Compose([
+        A.RandomBrightnessContrast(
+            brightness_limit=0.2,
+            contrast_limit=0.2,
+            p=1.0
+        ),
+    ])
+
+    # 3. Gamma correction (non-linear brightness)
+    gamma_adjust = A.Compose([
+        A.RandomGamma(gamma_limit=(80, 120), p=1.0),
+    ])
+
+    # 4. Realistic SEM noise
+    sem_noise = A.Compose([
+        A.OneOf([
+            A.ISONoise(
+                color_shift=(0.01, 0.05),
+                intensity=(0.1, 0.3),
+                p=1.0
+            ),
+            A.GaussNoise(
+                var_limit=(10.0, 30.0),
+                mean=0,
+                per_channel=False,
+                p=1.0
+            ),
+        ], p=1.0),
+    ])
+
+    # 5. Rotation invariance (microstructures have no preferred orientation)
+    rotation_90 = A.Compose([
+        A.RandomRotate90(p=1.0),
+    ])
+
+    # 6. Flips (orientation invariant)
+    horizontal_flip = A.Compose([
+        A.HorizontalFlip(p=1.0),
+    ])
+
+    vertical_flip = A.Compose([
+        A.VerticalFlip(p=1.0),
+    ])
+
+    # 7. Elastic deformation (mild - simulates slight material deformation)
+    elastic_deform = A.Compose([
+        A.ElasticTransform(
+            alpha=50,
+            sigma=5,
+            alpha_affine=0,
+            p=1.0
+        ),
+    ])
+
+    # 8. Image quality variations
+    compression = A.Compose([
+        A.ImageCompression(
+            quality_lower=75,
+            quality_upper=95,
+            compression_type=A.ImageCompression.ImageCompressionType.JPEG,
+            p=1.0
+        ),
+    ])
+
+    # 9. Downscale (simulates different magnifications)
+    downscale = A.Compose([
+        A.Downscale(
+            scale_min=0.5,
+            scale_max=0.75,
+            interpolation=cv2.INTER_LINEAR,
+            p=1.0
+        ),
+    ])
+
+    # 10. Coarse dropout (occlusions/artifacts)
+    coarse_dropout = A.Compose([
+        A.CoarseDropout(
+            max_holes=3,
+            max_height=32,
+            max_width=32,
+            min_holes=1,
+            min_height=8,
+            min_width=8,
+            fill_value=0,
+            p=1.0
+        ),
+    ])
+
+    # 11. Combined geometric (mild - for additional diversity)
+    geom_combined = A.Compose([
         A.HorizontalFlip(p=0.5),
-        A.VerticalFlip(p=0.2),
+        A.VerticalFlip(p=0.5),
         A.RandomRotate90(p=0.5),
     ])
 
-    # Stronger geometric + small shift/scale
-    geom_strong = A.Compose([
+    # 12. Intensity variations (mild blur + contrast)
+    intensity_blur = A.Compose([
+        A.OneOf([
+            A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=1.0),
+            A.RandomBrightnessContrast(0.15, 0.15, p=1.0),
+        ], p=0.9),
+        A.OneOf([
+            A.GaussianBlur(blur_limit=(3, 5), p=1.0),
+            A.MedianBlur(blur_limit=5, p=1.0),
+        ], p=0.3),
+    ])
+
+    # 13. Small shift/scale (very conservative for microstructures)
+    shift_scale = A.Compose([
         A.ShiftScaleRotate(
-            shift_limit=0.05,
-            scale_limit=0.15,
-            rotate_limit=25,
+            shift_limit=0.03,
+            scale_limit=0.1,
+            rotate_limit=0,  # No arbitrary rotations for microstructures
             border_mode=cv2.BORDER_REFLECT_101,
             p=1.0,
         )
     ])
 
-    # Intensity / contrast
-    intensity = A.Compose([
-        A.OneOf([
-            A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=1.0),
-            A.RandomBrightnessContrast(0.2, 0.2, p=1.0),
-            A.RandomGamma(gamma_limit=(80, 120), p=1.0),
-        ], p=0.9),
-        A.OneOf([
-            A.GaussianBlur(blur_limit=(3, 7), p=1.0),
-            A.MedianBlur(blur_limit=7, p=1.0),
-        ], p=0.3),
-    ])
-
     ops = [
-        AugmentationOperation("geom_mild", geom_mild),
-        AugmentationOperation("geom_strong", geom_strong),
-        AugmentationOperation("intensity", intensity),
+        AugmentationOperation("clahe", contrast_enhancement),
+        AugmentationOperation("brightness_contrast", brightness_contrast),
+        AugmentationOperation("gamma", gamma_adjust),
+        AugmentationOperation("iso_noise", sem_noise),
+        AugmentationOperation("rotate90", rotation_90),
+        AugmentationOperation("hflip", horizontal_flip),
+        AugmentationOperation("vflip", vertical_flip),
+        AugmentationOperation("geom_combined", geom_combined),
+        AugmentationOperation("intensity_blur", intensity_blur),
+        AugmentationOperation("shift_scale", shift_scale),
+        AugmentationOperation("elastic", elastic_deform),
+        AugmentationOperation("compression", compression),
+        AugmentationOperation("downscale", downscale),
+        AugmentationOperation("dropout", coarse_dropout),
     ]
 
     return ops
